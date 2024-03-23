@@ -158,10 +158,10 @@ from copy import deepcopy
 
 gate = Gate(282, 242, 42, 2)
 pacman_player = PlayerPos(w, p_h)
-blinky = Monster(w, m_h, name="blinky", directions=deepcopy(Blinky_directions))
-pinky = Monster(w, b_h, name="pinky", directions=deepcopy(Pinky_directions))
-inky = Monster(i_w, m_h, name="inky", directions=deepcopy(Inky_directions))
-clyde = Monster(c_w, m_h, name="clyde", directions=deepcopy(Clyde_directions))
+blinky = Monster(w, m_h, name="Blinky", directions=deepcopy(Blinky_directions))
+pinky = Monster(w, b_h, name="Pinky", directions=deepcopy(Pinky_directions))
+inky = Monster(i_w, m_h, name="Inky", directions=deepcopy(Inky_directions))
+clyde = Monster(c_w, m_h, name="Clyde", directions=deepcopy(Clyde_directions))
 monsters = [blinky, pinky, inky, clyde]
 
 base_level = {
