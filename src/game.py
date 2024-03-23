@@ -1,5 +1,6 @@
 # Adapted as a simple environment from https://github.com/hbokmann/Pacman/blob/master/pacman.py
 import pygame
+import pygame.image
 import numpy as np
 from src.pacman import Wall, Block, Player, Ghost
 
@@ -69,11 +70,14 @@ class Event:
 
 
 class PacManEnv:
-    def __init__(self, walls, gate, player, monsters, gui=False, ai=False):
+    def __init__(
+        self, walls, gate, player, monsters, gui=False, ai=False, log_path=None
+    ):
         self.walls = walls
         self.gate_init = gate
         self.player = player
         self.monsters = monsters
+        self.log_path = log_path
         self.gui = gui
         self.ai = ai
         self.width = 606
@@ -112,7 +116,7 @@ class PacManEnv:
         self.c_turn = 0
         self.c_steps = 0
         self.Pacman = Player(
-            self.player.x, self.player.y, "images/Trollman.png", gui=self.gui
+            self.player.x, self.player.y, "images/pacman.png", gui=self.gui
         )
         self.all_sprites_list.add(self.Pacman)
         self.pacman_collide.add(self.Pacman)
@@ -341,6 +345,11 @@ class PacManEnv:
 
         if self.gui:
             pygame.display.flip()
+            if done and self.log_path is not None:
+                try:
+                    pygame.image.save(self.screen, str(self.log_path))
+                except Exception as e:
+                    print("Unable to save image", e)
 
         if not self.ai:
             self.clock.tick(10)

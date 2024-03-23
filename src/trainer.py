@@ -1,12 +1,21 @@
+import os
+import shutil
 import numpy as np
 from tqdm import tqdm
+from pathlib import Path
 from .game import PacManEnv
 from .levels import base_level
 
 
 class Trainer:
-    def __init__(self, env, agent, level=None, gui=True):
+    def __init__(self, env, agent, level=None, gui=True, run_name=""):
         self.agent = agent
+        self.run_name = run_name
+        if self.run_name != "":
+            self.log_path = Path("logs")
+            self.run_path = self.log_path / f"{agent.agent_type}-{self.run_name}"
+            shutil.rmtree(self.run_path, ignore_errors=True)
+            os.makedirs(self.run_path, exist_ok=True)
         if level is not None:
             self.base_level = level
             self.env = PacManEnv(**level, gui=gui, ai=True)
@@ -53,6 +62,8 @@ class Trainer:
             if verbose and episode % log_interval == 0:
                 if render:
                     self.env.gui = True
+                    if self.run_name != "":
+                        self.env.log_path = self.run_path / f"episode-{episode}.png"
             if self.agent.agent_type == "monte_carlo":
                 self.agent.update_Q(episode_data)
                 self.agent.update_policy()
