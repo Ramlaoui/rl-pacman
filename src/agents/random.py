@@ -3,8 +3,9 @@ from .base import BaseAgent
 
 
 class RandomAgent(BaseAgent):
-    def __init__(self, actions):
-        super().__init__(actions)
+    def __init__(self, env):
+        super().__init__(env)
+        self.actions = env.get_action_space()
 
-    def act(self, observation):
+    def choose_action(self, state):
         return np.random.choice(self.actions)

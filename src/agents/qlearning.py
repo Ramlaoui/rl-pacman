@@ -6,24 +6,25 @@ import random
 class QLearningAgent(BaseAgent):
     def __init__(
         self,
-        actions,
+        env,
         alpha=0.1,
         gamma=0.95,
         epsilon=1.0,
     ):
-        super().__init__(actions)
+        super().__init__(env)
         self.q_table = {}
         self.learning_rate = alpha
         self.discount_factor = gamma
         self.exploration_rate = epsilon
+        self.agent_type = "q_learning"
 
-    def act(self, state):
+    def choose_action(self, state):
         if np.random.rand() < self.exploration_rate:
-            return random.choice(self.actions)
+            return random.choice(self.action_space)
         return max(
             self.q_table.get(state, {}),
             key=self.q_table.get(state, {}).get,
-            default=random.choice(self.actions),
+            default=random.choice(self.action_space),
         )
 
     def update(self, state, action, reward, next_state, done):

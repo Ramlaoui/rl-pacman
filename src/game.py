@@ -1,4 +1,4 @@
-# Adapted from https://github.com/hbokmann/Pacman/blob/master/pacman.py
+# Adapted as a simple environment from https://github.com/hbokmann/Pacman/blob/master/pacman.py
 import pygame
 import numpy as np
 from src.pacman import Wall, Block, Player, Ghost
@@ -68,7 +68,7 @@ class Event:
         self.key = action
 
 
-class Game:
+class PacManEnv:
     def __init__(self, walls, gate, player, monsters, gui=False, ai=False):
         self.walls = walls
         self.gate_init = gate
@@ -185,22 +185,28 @@ class Game:
             self.Pacman.change_x,
             self.Pacman.change_y,
         ]
-        min_distance = 100000
+        min_distance_x, min_distance_y = 100000, 100000
         for monster in self.Monsters:
-            obs += [
-                monster.rect.left,
-                monster.rect.top,
-                monster.change_x,
-                monster.change_y,
-            ]
-            distance = np.sqrt(
-                (self.Pacman.rect.left - monster.rect.left) ** 2
-                + (self.Pacman.rect.top - monster.rect.top) ** 2
+            distance_x, distance_y = (
+                self.Pacman.rect.left - monster.rect.left,
+                self.Pacman.rect.top - monster.rect.top,
             )
-            if distance < min_distance:
-                min_distance = distance
-        obs += [min_distance]
+            obs += [
+                distance_x,
+                distance_y,
+                self.Pacman.change_x - monster.change_x,
+                self.Pacman.change_y - monster.change_y,
+            ]
+            min_distance_x = min(min_distance_x, abs(distance_x))
+            min_distance_y = min(min_distance_y, abs(distance_y))
+        obs += [min_distance_x, min_distance_y]
         if prev_obs is not None:
+            blocks_pos_x = np.array([block.rect.x for block in self.block_list])
+            blocks_pos_y = np.array([block.rect.y for block in self.block_list])
+            blocks_pos = np.stack([blocks_pos_x, blocks_pos_y], axis=1)
+            closest_block_x = np.min(np.abs(blocks_pos_x - self.Pacman.rect.left))
+            closest_block_y = np.min(np.abs(blocks_pos_y - self.Pacman.rect.top))
+            obs += [closest_block_x, closest_block_y]
             n_blocks = prev_obs[-1]
             obs += [n_blocks - len(self.blocks_hit_list)]
             # blocks_obs = prev_obs[4 + 4 * len(self.monsters) :]
@@ -210,6 +216,7 @@ class Game:
             # obs = np.concatenate([np.array(obs), blocks_obs])
         else:
             # obs += len(self.block_list) * [1]
+            obs += [0, 0]
             obs += [len(self.block_list)]
         return tuple(np.array(obs).reshape(1, -1)[0])
 
@@ -310,12 +317,17 @@ class Game:
 
         if self.prev_score is None:
             self.prev_score = 0
-        reward = self.score - self.prev_score
+        reward = (self.score - self.prev_score) * 100
+        # for i, monster in enumerate(self.Monsters):
+        #     reward -= 0.01 * (
+        #         abs(self.Pacman.rect.left - monster.rect.left)
+        #         + abs(self.Pacman.rect.top - monster.rect.top)
+        #     )
         self.prev_score = self.score
 
         if self.score == self.bll:
             done = True
-            reward += 200
+            reward += 1000
             info = {"status": "won"}
 
         monsta_hit_list = pygame.sprite.spritecollide(

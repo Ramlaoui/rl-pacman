@@ -1,6 +1,6 @@
 import numpy as np
 from tqdm import tqdm
-from .game import Game
+from .game import PacManEnv
 from .levels import base_level
 
 
@@ -9,37 +9,66 @@ class Trainer:
         self.agent = agent
         if level is not None:
             self.base_level = level
-            self.env = Game(**level, gui=gui, ai=True)
+            self.env = PacManEnv(**level, gui=gui, ai=True)
         else:
             self.env = env
             self.env.gui = gui
         self.gui = gui
 
+    def plot_score(self, title=""):
+        self.agent.plot_score(title)
+
     def train(self, episodes=1000, render=False, log_interval=100, verbose=True):
-        self.rewards = []
         if verbose:
             print("Training...")
-        for episode in tqdm(range(episodes), total=episodes):
+            pbar = tqdm(range(episodes))
+        for episode in range(episodes):
             step = 0
             state = self.env.reset()
+            if self.agent.agent_type == "monte_carlo":
+                episode_data = []
             done = False
             total_reward = 0
             while not done and step < 10000:
                 step += 1
-                action = self.agent.act(state)
+                action = self.agent.choose_action(state)
                 next_state, reward, done, _ = self.env.step(action)
-                self.agent.update(state, action, reward, next_state, done)
+                if self.agent.agent_type in [
+                    "q_learning",
+                    "epsilon_greedy_constant_step_size",
+                    "dqn",
+                ]:
+                    self.agent.update(state, action, reward, next_state, done)
+                elif self.agent.agent_type == "sarsa":
+                    next_action = self.agent.choose_action(next_state)
+                    self.agent.update_sarsa(
+                        state, action, reward, next_state, next_action, done
+                    )
+                elif self.agent.agent_type == "monte_carlo":
+                    episode_data.append([state, action, reward])
                 state = next_state
                 total_reward += reward
-            self.rewards.append(total_reward)
+            self.agent.scores.append(total_reward)
             self.env.gui = self.gui
             if verbose and episode % log_interval == 0:
                 if render:
                     self.env.gui = True
-                print(
-                    f"Episode {episode}/{episodes}, Average Reward: {np.mean(self.rewards[-log_interval:])}"
+            if self.agent.agent_type == "monte_carlo":
+                self.agent.update_Q(episode_data)
+                self.agent.update_policy()
+            if verbose:
+                pbar.set_description(
+                    f"Episode {episode} - {log_interval}-Average Reward: {np.mean(self.agent.scores[-log_interval:])}"
                 )
+                pbar.update(1)
+        pbar.close()
+        self.agent.smoothed_scores = np.convolve(
+            self.agent.scores, np.ones(100) / 100, mode="valid"
+        )
         return self.agent
+
+    def play(self, render=True, slow=False):
+        return self.agent.play(render=render, slow=slow)
 
     def test(self, episodes=100, render=False, verbose=True):
         if verbose:

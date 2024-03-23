@@ -10,9 +10,7 @@ from .base import BaseAgent
 class DQNAgent(BaseAgent):
     def __init__(
         self,
-        actions,
-        state_size,
-        action_size,
+        env,
         alpha=0.001,
         gamma=0.95,
         epsilon=1.0,
@@ -20,9 +18,9 @@ class DQNAgent(BaseAgent):
         memory_size=10000,
         batch_size=20,
     ):
-        super().__init__(actions)
-        self.state_size = state_size
-        self.action_size = action_size
+        super().__init__(env)
+        self.state_size = self.env.get_state_size()
+        self.action_size = len(self.action_space)
         self.memory = deque(maxlen=memory_size)
         self.batch_size = batch_size
         self.alpha = alpha  # Learning rate
@@ -32,6 +30,7 @@ class DQNAgent(BaseAgent):
         self.model = self._build_model()
         self.optimizer = optim.Adam(self.model.parameters(), lr=self.alpha)
         self.criterion = nn.MSELoss()
+        self.agent_type = "dqn"
 
     def _build_model(self):
         model = nn.Sequential(
@@ -50,9 +49,9 @@ class DQNAgent(BaseAgent):
             nn.init.xavier_uniform_(m.weight)
             m.bias.data.fill_(0.01)
 
-    def act(self, state):
+    def choose_action(self, state):
         if np.random.rand() <= self.epsilon:
-            return random.choice(self.actions)
+            return random.choice(self.action_space)
         state = torch.tensor(state, dtype=torch.float).unsqueeze(0)
         q_values = self.model(state).detach().numpy()
         return np.argmax(q_values[0])

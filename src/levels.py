@@ -1,4 +1,4 @@
-from .game import Game, PlayerPos, Monster, Gate
+from .game import PacManEnv, PlayerPos, Monster, Gate
 
 walls = [
     [0, 0, 6, 600],
