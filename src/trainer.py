@@ -38,7 +38,7 @@ class Trainer:
                 episode_data = []
             done = False
             total_reward = 0
-            while not done and step < 10000:
+            while not done and step < 1000:
                 step += 1
                 action = self.agent.choose_action(state)
                 next_state, reward, done, _ = self.env.step(action)
@@ -59,6 +59,7 @@ class Trainer:
                 total_reward += reward
             self.agent.scores.append(total_reward)
             self.env.gui = self.gui
+            self.env.log_path = None
             if verbose and episode % log_interval == 0:
                 if render:
                     self.env.gui = True
