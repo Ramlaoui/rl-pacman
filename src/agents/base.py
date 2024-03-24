@@ -25,7 +25,7 @@ class BaseAgent:
     def plot_score(self, title=""):
         # Rolling average of the scores
         self.smoothed_scores = np.convolve(
-            self.scores, np.ones(100) / 100, mode="valid"
+            self.scores, np.ones(50) / 50, mode="valid"
         )
         plt.plot(self.scores, label="Score")
         plt.plot(

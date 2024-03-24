@@ -17,6 +17,7 @@ class DQNAgent(BaseAgent):
         epsilon_decay=1,
         memory_size=10000,
         batch_size=20,
+        device="cpu",
     ):
         super().__init__(env)
         self.state_size = self.env.get_state_size()
@@ -30,6 +31,7 @@ class DQNAgent(BaseAgent):
         self.model = self._build_model()
         self.optimizer = optim.Adam(self.model.parameters(), lr=self.alpha)
         self.criterion = nn.MSELoss()
+        self.device = device
         self.agent_type = "dqn"
 
     def _build_model(self):
@@ -52,8 +54,8 @@ class DQNAgent(BaseAgent):
     def choose_action(self, state):
         if np.random.rand() <= self.epsilon:
             return random.choice(self.action_space)
-        state = torch.tensor(state, dtype=torch.float).unsqueeze(0)
-        q_values = self.model(state).detach().numpy()
+        state = torch.tensor(state, dtype=torch.float, device=self.device).unsqueeze(0)
+        q_values = self.model(state).detach().cpu().numpy()
         return np.argmax(q_values[0])
 
     def update(self, state, action, reward, next_state, done):
@@ -64,10 +66,11 @@ class DQNAgent(BaseAgent):
     def replay(self):
         minibatch = random.sample(self.memory, self.batch_size)
         for state, action, reward, next_state, done in minibatch:
-            state = torch.tensor(state, dtype=torch.float)
-            next_state = torch.tensor(next_state, dtype=torch.float)
-            action = torch.tensor(action, dtype=torch.long)
-            reward = torch.tensor(reward, dtype=torch.float)
+            state = torch.tensor(state, dtype=torch.float, device=self.device)
+            next_state = torch.tensor(next_state, dtype=torch.float, device=self.device)
+            action = torch.tensor(action, dtype=torch.long, device=self.device)
+            reward = torch.tensor(reward, dtype=torch.float, device=self.device)
+            done = torch.tensor(done, dtype=torch.float, device=self.device)
 
             if done:
                 target = reward

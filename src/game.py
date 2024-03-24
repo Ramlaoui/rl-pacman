@@ -71,7 +71,7 @@ class Event:
 
 class PacManEnv:
     def __init__(
-        self, walls, gate, player, monsters, gui=False, ai=False, log_path=None
+        self, walls, gate, player, monsters, height=606, width=606, gui=False, ai=False, log_path=None
     ):
         self.walls = walls
         self.gate_init = gate
@@ -80,8 +80,8 @@ class PacManEnv:
         self.log_path = log_path
         self.gui = gui
         self.ai = ai
-        self.width = 606
-        self.height = 606
+        self.width = width
+        self.height = height
         self.ACTIONS_MAP = {
             0: pygame.K_LEFT,  # "left"
             1: pygame.K_RIGHT,  # "right"
@@ -89,6 +89,7 @@ class PacManEnv:
             3: pygame.K_DOWN,  # "down"
             4: None,
         }
+        self.start = True
 
     def reset(self):
         pygame.init()
@@ -314,6 +315,11 @@ class PacManEnv:
             self.all_sprites_list.draw(self.screen)
             self.monsta_list.draw(self.screen)
 
+            if self.start and self.log_path is not None:
+                log_path = str(self.log_path).split("episode")[0] + "/start.png"
+                pygame.image.save(self.screen, str(log_path))
+                self.start = False
+
             text = self.font.render(
                 "Score: " + str(self.score) + "/" + str(self.bll), True, red
             )
@@ -321,7 +327,9 @@ class PacManEnv:
 
         if self.prev_score is None:
             self.prev_score = 0
-        reward = (self.score - self.prev_score) * 100
+        reward = (self.score - self.prev_score) * 10
+        if self.score == self.prev_score:
+            reward -= 0.1
         # for i, monster in enumerate(self.Monsters):
         #     reward -= 0.01 * (
         #         abs(self.Pacman.rect.left - monster.rect.left)
@@ -331,7 +339,7 @@ class PacManEnv:
 
         if self.score == self.bll:
             done = True
-            reward += 1000
+            reward += 100
             info = {"status": "won"}
 
         monsta_hit_list = pygame.sprite.spritecollide(
@@ -340,13 +348,20 @@ class PacManEnv:
 
         if monsta_hit_list:
             done = True
-            reward -= 100
+            reward -= 10
             info = {"status": "lost"}
 
         if self.gui:
             pygame.display.flip()
             if done and self.log_path is not None:
                 try:
+                    episode = str(self.log_path).split("/")[-1].split(".")[0].split('-')[1]
+                    text = self.font.render(
+                        "Episode: " + episode,
+                        True,
+                        red,
+                    )
+                    self.screen.blit(text, [10, 30])
                     pygame.image.save(self.screen, str(self.log_path))
                 except Exception as e:
                     print("Unable to save image", e)

@@ -74,7 +74,7 @@ class Trainer:
                 pbar.update(1)
         pbar.close()
         self.agent.smoothed_scores = np.convolve(
-            self.agent.scores, np.ones(100) / 100, mode="valid"
+            self.agent.scores, np.ones(50) / 50, mode="valid"
         )
         return self.agent
 
